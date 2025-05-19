@@ -11,7 +11,7 @@ import java.util.Queue;
  */
 public class NumberOfIslands {
     public static void main(String[] args) {
-        NumberOfIslands obj = new NumberOfIslands();
+        Solution obj = new Solution();
         char[][] grid = {
                 {'1', '1', '0', '0', '0'},
                 {'1', '1', '0', '0', '0'},
@@ -21,70 +21,83 @@ public class NumberOfIslands {
         System.out.println("Number of islands: " + obj.numIslands(grid));
     }
 
-    public int numIslands(char[][] grid) {
-        return dfs(grid);
-    }
+    static class Solution {
+        private int n;
+        private int m;
+        private char[][] grid;
+        private int result;
+        private final int[][] directions = {{1,0}, {-1,0}, {0,1}, {0,-1}};
 
-    private int dfs(char[][] grid) {
-        if (grid == null || grid.length == 0) return 0;
+        /*
+         * DFS and BFS both can be used to solve this problem.
+         * The time complexity is O(n*m) for both approaches.
+         * The space complexity is O(n*m) for DFS (due to recursion stack) and O(n*m) for BFS (due to queue).
+         */
+        public int numIslands(char[][] grid) {
+            if (grid == null || grid.length == 0) return 0;
 
-        int numOfIslands = 0;
-        for (int i = 0 ; i < grid.length ; i++) {
-            for (int j = 0 ; j < grid[0].length ; j++) {
-                if (grid[i][j] == '1') {
-                    numOfIslands++;
-                    dfs(grid, i, j);
+            this.grid = grid;
+            this.n = grid.length;
+            this.m = grid[0].length;
+            this.result = 0;
+
+            // implementation method
+            bfs();
+
+            return result;
+        }
+
+        /**
+         * DFS approach to count the number of islands.
+         */
+        private void dfs() {
+            for (int i = 0 ; i < n ; i++) {
+                for (int j = 0 ; j < m ; j++) {
+                    if (grid[i][j] == '1') {
+                        result++;
+                        dfs(i, j);
+                    }
                 }
             }
         }
 
-        return numOfIslands;
-    }
+        /**
+         * DFS helper function to explore the island.
+         * @param i - first index
+         * @param j - second index
+         */
+        private void dfs(int i, int j) {
+            if (indexInvalid(i, j)) return;
 
-    private void dfs(char[][] grid, int i, int j) {
-        if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length || grid[i][j] != '1') return;
+            grid[i][j] = '0'; // mark this land as visited by setting to 0
+            for (int[] dir : directions) { // iterate in all directions
+                dfs(i + dir[0], j + dir[1]);
+            }
+        }
 
-        grid[i][j] = '0'; // mark as visited
-        dfs(grid, i + 1, j); // down
-        dfs(grid, i - 1, j); // up
-        dfs(grid, i, j + 1); // right
-        dfs(grid, i, j - 1); // left
-    }
+        /**
+         * BFS approach to count the number of islands.
+         */
+        private void bfs() {
+            Queue<int[]> q = new LinkedList<>();
 
-    private int bfs(char[][] grid) {
-        if (grid == null || grid.length == 0) return 0;
+            for (int i = 0 ; i < n ; i++) {
+                for (int j = 0 ; j < m ; j++) {
+                    if (grid[i][j] == '1') {
+                        result++;
+                        q.offer(new int[]{i, j});
 
-        int numOfIslands = 0;
-        int m = grid.length;
-        int n = grid[0].length;
+                        while (!q.isEmpty()) {
+                            int[] curr = q.poll();
+                            int x = curr[0];
+                            int y = curr[1];
 
-        // checks all directions around the node - (up, down, left, right).
-        int[][] directions = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+                            if (indexInvalid(x, y)) continue;
 
-        Queue<int[]> q = new LinkedList<>();
+                            grid[x][y] = '0'; // mark this land as visited by setting to 0
 
-        for (int i = 0 ; i < m ; i++) {
-            for (int j = 0 ; j < n ; j++) {
-                if (grid[i][j] == '1') {
-                    numOfIslands++;
-                    q.offer(new int[]{i, j});
-
-                    while (!q.isEmpty()) {
-                        int[] currList = q.poll();
-                        int x = currList[0];
-                        int y = currList[1];
-
-                        // if the node is water (0), skip
-                        if (x < 0 || x >= m || y < 0 || y >= n || grid[x][y] != '1') continue;
-
-                        grid[x][y] = '0'; // marked visited
-
-                        // for all the directions, if land is present, keep on offering to the queue
-                        for (int[] direction : directions) {
-                            int nx = x + direction[0];
-                            int ny = y + direction[1];
-                            if (nx >= 0 && nx < m && ny >= 0 && ny < n && grid[nx][ny] == '1') {
-                                q.offer(new int[]{nx, ny});
+                            for (int[] dir : directions) { // iterate in all directions
+                                q.offer(new int[]{x + dir[0], y + dir[1]});
                             }
                         }
                     }
@@ -92,6 +105,14 @@ public class NumberOfIslands {
             }
         }
 
-        return numOfIslands;
+        /**
+         * Check if the index is invalid (out of bounds or water)
+         * @param x - first index
+         * @param y - second index
+         * @return true if invalid, false otherwise
+         */
+        private boolean indexInvalid(int x, int y) {
+            return x < 0 || x >= n || y < 0 || y >= m || grid[x][y] != '1';
+        }
     }
 }
