@@ -3,6 +3,13 @@ package Study.Graph;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/*
+    * Surrounded Regions
+
+    You are given a 2-D matrix board containing 'X' and 'O' characters.
+    If a continuous, four-directionally connected group of 'O's is surrounded by 'X's, it is considered to be surrounded.
+    Change all surrounded regions of 'O's to 'X's and do so in-place by modifying the input board.
+ */
 public class SurroundedRegions {
     public static void main(String[] args) {
         char[][] board = {
@@ -24,172 +31,102 @@ public class SurroundedRegions {
     }
 
     static class Solution {
-        private int[] delRow = {-1, 0, 1, 0};
-        private int[] delCol = {0, 1, 0, -1};
-        private int[][] vis;
-
-        public void solve(char[][] board) {
-            this.board = board;
-            this.n = board.length;
-            this.m = board[0].length;
-
-            // this is for bfs and dfs impl
-            this.vis = new int[board.length][board[0].length];
-
-            betterDFS();
-        }
-
-        private final int[][] DIRECTIONS = {
-                {0, 1},
-                {1, 0},
-                {0, -1},
-                {-1, 0}
-        };
-        private final char X = 'X';
         private final char O = 'O';
-        private final char TEMP = 'T';
+        private final char X = 'X';
+        private final char T = 'T';
+
         private char[][] board;
         private int n;
         private int m;
 
-        private void betterDFS() {
-            replaceAll(O, TEMP);
+        private final int[][] directions = {{0,1}, {1,0}, {-1,0}, {0,-1}};
 
-            for (int row = 0; row < n; row++) {
-                betterDFS(row, 0);
-                betterDFS(row, m - 1);
-            }
+        public void solve(char[][] board) {
+            if (board == null || board.length == 0) return;
 
-            for (int col = 1; col < m - 1; col++) {
-                betterDFS(0, col);
-                betterDFS(n - 1, col);
-            }
+            this.board = board;
+            this.n = board.length;
+            this.m = board[0].length;
 
-            replaceAll(TEMP, X);
+            dfs();
         }
 
-        private void replaceAll(char from, char to) {
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < m; j++) {
-                    if (board[i][j] == from) board[i][j] = to;
-                }
-            }
-        }
-
-        private void betterDFS(int row, int col) {
-            if (row < 0 || col < 0 || row >= n || col >= m) return;
-            if (board[row][col] != TEMP) return;
-
-            board[row][col] = O;
-            for (int[] dir: DIRECTIONS) {
-                betterDFS(row + dir[0], col + dir[1]);
-            }
-        }
-
-        // BFS implementation
-
+        /**
+         * BFS approach
+         */
         private void bfs() {
             Queue<int[]> q = new LinkedList<>();
 
-            for (int i = 0 ; i < m ; i++) {
-                if (vis[0][i] == 0 && board[0][i] == 'O') {
-                    q.offer(new int[]{0, i});
-                    vis[0][i] = 1;
-                }
-                if (vis[n-1][i] == 0 && board[n-1][i] == 'O') {
-                    q.offer(new int[]{n-1, i});
-                    vis[n-1][i] = 1;
-                }
+            // Step 1: Iterate through all the edges. Find for 'O's and offer to the Queue.
+            for (int j = 0 ; j < m ; j++) {
+                if (board[0][j] == O) q.offer(new int[]{0, j});
+                if (board[n-1][j] == O) q.offer(new int[]{n - 1, j});
+            }
+            for (int i = 0 ; i < n ; i++) {
+                if (board[i][0] == O) q.offer(new int[]{i, 0});
+                if (board[i][m - 1] == O) q.offer(new int[]{i, m - 1});
             }
 
-            for (int i = 0; i < n; i++) {
-                // first column
-                if (board[i][0] == 'O' && vis[i][0] == 0) {
-                    q.add(new int[]{i, 0});
-                    vis[i][0] = 1;
-                }
-                // last column
-                if (board[i][m-1] == 'O' && vis[i][m-1] == 0) {
-                    q.add(new int[]{i, m-1});
-                    vis[i][m-1] = 1;
-                }
-            }
-
-            // Step 2: BFS to mark all connected 'O's
+            // Step 2: BFS to mark all edged 'O's as 'T'
             while (!q.isEmpty()) {
-                int[] cell = q.poll();
-                int row = cell[0];
-                int col = cell[1];
+                int[] curr = q.poll();
+                int row = curr[0];
+                int col = curr[1];
 
-                for (int i = 0; i < 4; i++) {
-                    int nrow = row + delRow[i];
-                    int ncol = col + delCol[i];
+                if (row < 0 || row >= n || col < 0 || col >= m || board[row][col] != O) continue;
 
-                    if (nrow >= 0 && nrow < n && ncol >= 0 && ncol < m &&
-                            board[nrow][ncol] == 'O' && vis[nrow][ncol] == 0) {
-                        q.add(new int[]{nrow, ncol});
-                        vis[nrow][ncol] = 1;
-                    }
+                board[row][col] = T;
+
+                for (int[] dir : directions) {
+                    q.add(new int[]{row + dir[0], col + dir[1]});
                 }
             }
 
-            // Step 3: Flip all unvisited 'O' to 'X'
+            // Step 3: Flip all 'O' to 'X' and 'T' to 'O'.
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < m; j++) {
-                    if (board[i][j] == 'O' && vis[i][j] == 0) {
-                        board[i][j] = 'X';
+                    if (board[i][j] == O) {
+                        board[i][j] = X;
+                    } else if (board[i][j] == T) {
+                        board[i][j] = O;
                     }
                 }
             }
         }
 
-        // DFS implementation
-
+        /**
+         * DFS approach
+         */
         private void dfs() {
-            for (int i = 0 ; i < m ; i++) {
-                // first row
-                if (vis[0][i] == 0 && board[0][i] == 'O') {
-                    dfs(0, i);
-                }
-                // last row
-                if (vis[n-1][i] == 0 && board[n-1][i] == 'O') {
-                    dfs(n-1, i);
-                }
-            }
-
-            for (int j = 0 ; j < n ; j++) {
-                // first column
-                if (vis[j][0] == 0 && board[j][0] == 'O') {
-                    dfs(j, 0);
-                }
-                // last column
-                if (vis[j][m-1] == 0 && board[j][m-1] == 'O') {
-                    dfs(j, m-1);
-                }
-            }
+            replace(O, T);
 
             for (int i = 0 ; i < n ; i++) {
+                dfs(i, 0);
+                dfs(i, m - 1);
+            }
+
+            for (int j = 1 ; j < m - 1 ; j++) {
+                dfs(0, j);
+                dfs(n - 1, j);
+            }
+
+            replace(T, X);
+        }
+
+        private void replace(char x, char y) {
+            for (int i = 0 ; i < n ; i++) {
                 for (int j = 0 ; j < m ; j++) {
-                    if (vis[i][j] == 0 && board[i][j] == 'O') {
-                        board[i][j] = 'X';
-                    }
+                    if (board[i][j] == x) board[i][j] = y;
                 }
             }
         }
 
-        private void dfs(int row, int col) {
-            vis[row][col] = 1;
-            int n = board.length;
-            int m = board[0].length;
+        private void dfs(int start, int end) {
+            if (start < 0 || start >= n || end < 0 || end >= m || board[start][end] != T) return;
 
-            for (int i = 0 ; i < 4 ; i++) {
-                int nrow = row + delRow[i];
-                int ncol = col + delCol[i];
-
-                if (nrow >= 0 && nrow < n && ncol >= 0 && ncol < m
-                        && vis[nrow][ncol] == 0 && board[nrow][ncol] == 'O') {
-                    dfs(nrow, ncol);
-                }
+            board[start][end] = O;
+            for (int[] dir : directions) {
+                dfs(start + dir[0], end + dir[1]);
             }
         }
     }
